@@ -385,7 +385,10 @@
   function setup(cv){
     const dpr = window.devicePixelRatio||1;
     const rect = cv.getBoundingClientRect();
-    const w = rect.width, h = cv.getAttribute('height')*1 || rect.height;
+    const w = rect.width;
+    const hMax = cv.getAttribute('height')*1 || rect.height;
+    // responsive height: cap to a readable landscape ratio on narrow screens
+    const h = Math.round(Math.max(200, Math.min(hMax, w*0.58)));
     cv.width = w*dpr; cv.height = h*dpr; cv.style.height = h+'px';
     const ctx = cv.getContext('2d');
     ctx.setTransform(dpr,0,0,dpr,0,0);
