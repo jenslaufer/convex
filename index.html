@@ -418,6 +418,12 @@
     drawC1single();
   }
   function c1reset(){ single=[1]; expSeries=[1]; drawC1single(); }
+  // deterministic example path: exactly 12 ups + 12 downs → 0.9^12 ≈ 0.28 (a "fair" run still loses)
+  function c1seed(){ single=[1]; expSeries=[1];
+    [1,1,0,0,1,0,1,1,0,0,1,0,1,0,0,1,1,0,0,1,0,1,1,0].forEach(m=>{
+      single.push(single[single.length-1]*(m?UP:DN));
+      expSeries.push(expSeries[expSeries.length-1]*1.05); });
+    drawC1single(); }
 
   function drawC1single(){
     const cv=document.getElementById('c1single'); if(!cv) return;
@@ -649,7 +655,7 @@
   window.addEventListener('load',()=>{ runEnsemble(); drawAll(); });
   // initial draw (fonts may shift; redraw on font load)
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(drawAll);
-  runEnsemble(); drawAll();
+  c1seed(); runEnsemble(); drawAll();
 })();
 </script>
 </body>
