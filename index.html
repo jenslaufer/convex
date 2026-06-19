@@ -229,7 +229,7 @@
 
     <div class="card wide">
       <div class="legend">
-        <span><i style="background:var(--ink-faint);opacity:.4"></i> 1,000 individual players</span>
+        <span><i style="background:var(--ink-faint);opacity:.32"></i> middle 90% of 1,000 players</span>
         <span style="color:var(--green)"><i style="background:var(--green)"></i> expected wealth (the crowd)</span>
         <span style="color:var(--red)"><i style="background:var(--red)"></i> time-average path (you)</span>
       </div>
@@ -471,11 +471,29 @@
     for(let d=lo; d<=hi; d++){ const y=Y(Math.pow(10,d));
       gridStyle(ctx); ctx.beginPath(); ctx.moveTo(f.l,y); ctx.lineTo(f.r,y); ctx.stroke();
       label(ctx, '10'+(d<0?'⁻':'')+Math.abs(d), f.l-8,y,C.faint,'right'); }
-    // sample paths
-    ctx.lineWidth=1; ctx.strokeStyle='rgba(138,130,117,.18)';
-    const step=Math.max(1,Math.floor(P/220));
-    for(let p=0;p<P;p+=step){ const a=paths[p]; ctx.beginPath();
-      for(let t=0;t<=T;t++){ t?ctx.lineTo(X(t),Y(a[t])):ctx.moveTo(X(t),Y(a[t])); } ctx.stroke(); }
+    // distribution of outcomes — smoothed percentile fan (outer 5–95%, inner 25–75%)
+    const col=new Float64Array(P);
+    const QS=[0.05,0.25,0.75,0.95];
+    const raw=QS.map(()=>new Float64Array(T+1));
+    for(let t=0;t<=T;t++){
+      for(let p=0;p<P;p++) col[p]=paths[p][t];
+      col.sort();
+      QS.forEach((fr,k)=>{ raw[k][t]=col[Math.min(P-1,Math.max(0,Math.floor(fr*P)))]; });
+    }
+    const smooth=a=>{ const o=new Float64Array(a.length);
+      for(let t=0;t<a.length;t++){ let s=0,c=0;
+        for(let j=-3;j<=3;j++){ const u=t+j; if(u>=0&&u<a.length){ s+=Math.log10(Math.max(a[u],1e-12)); c++; } }
+        o[t]=Math.pow(10,s/c); }
+      o[0]=a[0]; return o; };
+    const bnd=raw.map(smooth);
+    function ribbon(iTop,iBot,fill){
+      ctx.beginPath();
+      for(let t=0;t<=T;t++){ const x=X(t),y=Y(bnd[iTop][t]); t?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+      for(let t=T;t>=0;t--){ ctx.lineTo(X(t),Y(bnd[iBot][t])); }
+      ctx.closePath(); ctx.fillStyle=fill; ctx.fill();
+    }
+    ribbon(3,0,'rgba(138,130,117,.15)');   // 5–95%
+    ribbon(2,1,'rgba(138,130,117,.30)');   // 25–75%
     // theoretical lines
     ctx.lineWidth=2.6; ctx.strokeStyle=C.green; ctx.beginPath();
     for(let t=0;t<=T;t++){ const v=Math.pow(1.05,t); t?ctx.lineTo(X(t),Y(v)):ctx.moveTo(X(t),Y(v)); } ctx.stroke();
@@ -553,7 +571,7 @@
   function drawC3(){
     const cv=document.getElementById('c3'); if(!cv) return;
     const {ctx,w,h}=setup(cv);
-    const f=frame(w,h,{l:56,r:16,t:16,b:30});
+    const f=frame(w,h,{l:56,r:16,t:16,b:40});
     const p=c3params();
     const xMax=0.15;
     const X=x=>f.l+x/xMax*f.W;
@@ -569,7 +587,7 @@
       gridStyle(ctx); ctx.beginPath(); ctx.moveTo(f.l,y); ctx.lineTo(f.r,y); ctx.stroke();
       label(ctx,(v>=0?'+':'')+(v*100).toFixed(0)+'%',f.l-8,y,C.faint,'right'); }
     for(let x=0;x<=0.15;x+=0.03) label(ctx,(x*100).toFixed(0)+'%',X(x),f.b+15,C.faint,'center',10);
-    label(ctx,'insurance allocation →',f.r,f.b+15,C.faint,'right',10);
+    label(ctx,'insurance allocation →',f.l+f.W/2,f.b+30,C.faint,'center',10);
     // x* line
     const xs=argmax(p);
     if(xs<=xMax){ ctx.strokeStyle=C.amber; ctx.lineWidth=1.4; ctx.setLineDash([5,4]); ctx.beginPath();
