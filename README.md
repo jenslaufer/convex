@@ -2,7 +2,7 @@
 
 An interactive, single-file web essay on **convexity, compounding, and non-ergodicity** — for anyone who thinks in geometric returns.
 
-**Live:** https://jenslaufer.github.io/its-just-math/
+**Live:** https://jenslaufer.com/convex/
 
 Three interactive pieces:
 
